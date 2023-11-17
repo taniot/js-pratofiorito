@@ -1,8 +1,14 @@
 'use strict';
 
-/*
-Functions
-*/
+/*************
+ * Functions
+ ************/
+
+//utilities
+function getRndInteger(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 function myCreateElement(tag, className, content) {
   const element = document.createElement(tag);
   element.classList.add(className);
@@ -31,33 +37,93 @@ function setCellNumber(level) {
   return cellNumber;
 }
 
+/*
+CreateBoard: crea la board di giorno
+*/
 function createBoard(mainElement, cellNumber) {
   const cells = Math.sqrt(cellNumber);
-
   const fragment = document.createDocumentFragment();
+
   for (let i = 1; i <= cellNumber; i++) {
     const myElement = myCreateElement('div', 'cell', i);
     myElement.classList.add(`cell-${cells}`);
-
-    myElement.addEventListener('click', function () {
-      console.log(myElement.innerHTML);
-      myElement.classList.add('prova');
-    });
-
     fragment.append(myElement);
   }
+
   mainElement.append(fragment);
 }
 
+/*
+generateBombs: genera le bombe del gioco
+*/
+function generateBombs(num, numLimit) {
+  const bombs = [];
+  while (bombs.length < num) {
+    const currentNumber = getRndInteger(1, numLimit);
+
+    if (!bombs.includes(currentNumber)) {
+      bombs.push(currentNumber);
+    }
+  }
+
+  return bombs;
+}
+
+/*
+generateBombs: genera le bombe del gioco
+*/
+
+function gameLogic(board, cellNumber) {
+  const score = [];
+  let play = true;
+  const bombNumber = 16;
+  const bombs = generateBombs(bombNumber, cellNumber);
+  const message = document.querySelector('.game-status');
+  board.addEventListener('click', function (event) {
+    if (!event.target.classList.contains('cell')) return;
+    if (!play) return;
+
+    const currentElement = event.target;
+    const cellValue = parseInt(currentElement.innerHTML);
+
+    if (bombs.includes(cellValue)) {
+      //ho calpestato una bomba
+      console.log('ho calpestato una bomba');
+      currentElement.style.backgroundColor = 'red';
+      message.innerHTML = `Hai calpelstato una bomba: ${score.length}`;
+      play = false;
+    } else {
+      console.log('sono stato fortunato');
+      currentElement.style.backgroundColor = 'blue';
+
+      if (!score.includes(cellValue)) {
+        score.push(cellValue);
+      }
+
+      message.innerHTML = `Sono stato fortunato: ${score.length}`;
+
+      if (score.length === cellNumber - bombs.length) {
+        message.innerHTML = `Hai vinto: ${score.length}`;
+      }
+    }
+  });
+}
+
+/*************
+ * Game Core
+ ************/
+
 function campoMinato() {
   resetGameFn();
+
   const board = document.querySelector('.board');
-  let level = 3; //TODO: sarà determinato dall'utente con una select HTML (1,2,3)
+  const level = parseInt(document.getElementById('select-level').value);
+
   const cellNumber = setCellNumber(level);
 
-  console.log(cellNumber);
-
+  //crea l'area di gioco
   createBoard(board, cellNumber);
+  gameLogic(board, cellNumber);
 }
 
 function resetGameFn() {
@@ -65,9 +131,9 @@ function resetGameFn() {
   board.innerHTML = '';
 }
 
-/*
-Game
-*/
+/*************
+ * Game Executions
+ ************/
 
 const startGame = document.getElementById('game-start');
 const resetGame = document.getElementById('game-reset');
